@@ -192,10 +192,10 @@ class Consumer(threading.Thread):  #создает класс Consumer, кажд
                 if task.process_type == ProcessingType.INVERT:
                     #инверсия
                     if img.mode == 'RGB':
-                        processed = Image.eval(img, lambda x: 255 - x)
+                        processed = Image.eval(img, lambda x: 255 - x) #применяет функцию к каждому пикселю
                     else:
                         img_rgb = img.convert('RGB')
-                        processed = Image.eval(img_rgb, lambda x: 255 - x)
+                        processed = Image.eval(img_rgb, lambda x: 255 - x) 
                 
                 elif task.process_type == ProcessingType.BLUR:
                     #размытие
@@ -276,8 +276,8 @@ def main():
     #настройки
     INPUT_FOLDER = "input_images"
     OUTPUT_FOLDER = "output_images"
-    NUM_TASKS = 10           # Количество задач
-    NUM_CONSUMERS = 3        # Количество потребителей
+    NUM_TASKS = 10           #количество задач
+    NUM_CONSUMERS = 3        #количество потребителей
     
     #выбираем тип обработки
     print("\nВыберите тип обработки:")
