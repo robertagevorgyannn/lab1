@@ -220,21 +220,21 @@ class Consumer(threading.Thread):  #создает класс Consumer, кажд
         self.running = False
 
 
-class ResultCollector:
+class ResultCollector: #собирает и анализирует результаты обработки от всех потребителей 
     
-    def __init__(self, result_queue, num_expected):
-        self.result_queue = result_queue
-        self.num_expected = num_expected
-        self.results = []
+    def __init__(self, result_queue, num_expected): 
+        self.result_queue = result_queue #запоминает ссылку на очередь, откуда будет забирать результаты
+        self.num_expected = num_expected #сколько результатов должно быть собрано 
+        self.results = [] #пустой список, куда будут складываться полученные результаты
         self.running = True
     
     def collect(self):
-        print("\n[COLLECTOR] Начинаю сбор результатов")
+        print("\n[COLLECTOR] Начинаю сбор результатов") 
         
-        while len(self.results) < self.num_expected:
-            result = self.result_queue.get()
+        while len(self.results) < self.num_expected: #продолжается, пока количество собранных результатов меньше ожидаемого 
+            result = self.result_queue.get() #получение результата из очереди 
             if result:
-                self.results.append(result)
+                self.results.append(result) 
                 print(f"[COLLECTOR] Получен результат задачи #{result.task_id}")
         
         print("[COLLECTOR] Сбор завершен")
