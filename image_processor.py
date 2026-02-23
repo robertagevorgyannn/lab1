@@ -96,24 +96,26 @@ class Producer(threading.Thread): #создается класс Producer, ко�
             print("[PRODUCER] Нет изображений!")
             return
         
-        print(f"[PRODUCER] Найдено изображений: {len(all_images)}")
+        print(f"[PRODUCER] Найдено изображений: {len(all_images)}") #сообщает сколько изображений найдено в папке 
         
         #создаем задачи
         for i in range(self.num_images):
-            if not self.running:
-                break
+            if not self.running: #если self.running стал False 
+                break #выходим из цикла
             
             #выбираем случайное изображение
             image_file = random.choice(all_images)
-            input_path = os.path.join(self.images_folder, image_file)
+            input_path = os.path.join(self.images_folder, image_file) #формирование полного пути к исходному файлу 
+            #         соединяет части пути/папка с исходниками/имя выбранного файла
             
-            # Имя выходного файла
-            name, ext = os.path.splitext(image_file)
-            timestamp = datetime.now().strftime("%H%M%S")
-            output_name = f"{name}_{self.process_type.value}_{i}_{timestamp}{ext}"
-            output_path = os.path.join(self.output_folder, output_name)
+            #имя выходного файла
+            name, ext = os.path.splitext(image_file) #разбиение имени файла на 2 части - имя файла без расширения/расширение с точкой
+            timestamp = datetime.now().strftime("%H%M%S") #создание временной метки
+            output_name = f"{name}_{self.process_type.value}_{i}_{timestamp}{ext}" #формирование имени выходного файла
+            #            имя файла/     тип обработки    /номер задачи/дата создания/расширение
+            output_path = os.path.join(self.output_folder, output_name) #полный путь к выходному файлу 
             
-            # Создаем задачу
+            #создаем задачу
             task = ImageTask(
                 task_id=i,
                 input_path=input_path,
@@ -122,12 +124,12 @@ class Producer(threading.Thread): #создается класс Producer, ко�
                 created_time=time.time()
             )
             
-            # Отправляем в очередь
+            #отправляем в очередь
             print(f"[PRODUCER] Задача #{i}: {image_file}")
-            self.task_queue.put(task)
+            self.task_queue.put(task) # отправка в очередь -> помещает созданную задачу в общую очередь
             self.tasks_created += 1
             
-            # Небольшая задержка
+            #небольшая задержка
             time.sleep(0.3)
         
         print(f"[PRODUCER] ЗАВЕРШЕНИЕ: создано {self.tasks_created} задач")
@@ -136,9 +138,7 @@ class Producer(threading.Thread): #создается класс Producer, ко�
         self.running = False
 
 
-class Consumer(threading.Thread):
-    """Обработчик задач"""
-    
+class Consumer(threading.Thread):    
     def __init__(self, consumer_id, task_queue, result_queue):
         super().__init__()
         self.consumer_id = consumer_id
