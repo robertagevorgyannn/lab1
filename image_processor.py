@@ -1,65 +1,54 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import threading #модуль для многопоточности - позволяет создавать и управлять потоками. нужен для параллельной обработки нескольких изобр.
+import queue #потокобезопасная очередь для передачи задач между потоками. производители кладут задачи, потребители забирают. FIFO 
+import os #работа с os - для работы с файловой системой: проверка существования файлов, создание папок, пути
+import time #для задержек, измерения времени выполнения, создания временных меток 
+from PIL import Image, ImageFilter #импортируем из библиотеки обработки изображений основной класс Image - открыть, сохранить, преобразовать изображения
+#ImageFilter - применять эффекты (размытие и тд) 
+from dataclasses import dataclass #декоратор для классов данных - автоматически генерирует __init__, __repr__ и другие методы для классов, которые в основном хранят данные
+from enum import Enum #для создания ограниченного набора констант (типы обработки) 
+import random #для выбора случайных изображений
+from datetime import datetime #работа с датой/временем - для логирования, временных меток, измерения времени выполнения
 
-"""
-image_processor.py
-Параллельная обработка изображений с использованием паттерна Producer-Consumer
-"""
-
-import threading
-import queue
-import os
-import time
-from PIL import Image, ImageFilter
-from dataclasses import dataclass
-from enum import Enum
-import random
-from datetime import datetime
-
-
-# Типы обработки
+#варианты обработки изображений
 class ProcessingType(Enum):
-    INVERT = "invert"      # Негатив
-    BLUR = "blur"          # Размытие
-    MIRROR = "mirror"      # Отражение
+    INVERT = "invert"      #инверсия
+    BLUR = "blur"          #размытие
+    MIRROR = "mirror"      #отражение
 
-
-@dataclass
-class ImageTask:
-    """Задача на обработку"""
-    task_id: int
-    input_path: str
-    output_path: str
-    process_type: ProcessingType
-    created_time: float
-
+@dataclass #Python автоматически создает конструктор и другие методы при наличии декоратора 
+class ImageTask: #представляет одну задачу на обработку
+    task_id: int #id задачи 
+    input_path: str #путь к исходному файлу - откуда брать изображения
+    output_path: str #путь для результата - куда сохранить обработанное изображение
+    process_type: ProcessingType #вариант обработки
+    created_time: float #время создания
 
 @dataclass
-class TaskResult:
-    """Результат обработки"""
+class TaskResult: #хранит информацию о результате обработки одной задачи 
     task_id: int
-    success: bool
-    message: str
+    success: bool #флаг успеха 
+    message: str #текстовое сообщение (описание ошибки или "успешно")
     process_time: float
     consumer_id: int
 
-
-class BlockingQueue:
-    """Блокирующая очередь"""
+class BlockingQueue: #класс для расширения стандартной очереди queue.Queue добавляя флаг активности, логирование 
+    def __init__(self, maxsize=0): #self - ссылка на создаваемый объект, параметр со значением по умолчанию 0
+        self.queue = queue.Queue(maxsize)  #создание внутренней очереди, self.queue - создает атрибут объекта с именем queue
+        #queue.Queue - обращается к классу Queue из импортированного модуля queue, (maxsize) - передает параметр размера в конструктор Queue 
+        self.active = True #установка флага активности - создает атрибут active со значение True. Очередь изначально открыта
     
-    def __init__(self, maxsize=0):
-        self.queue = queue.Queue(maxsize)
-        self.active = True
-    
-    def put(self, item):
+    def put(self, item): #определение метода put для добавления элемента， item - параметр， элемент для добавления в очередь
         if not self.active:
             raise Exception("Очередь закрыта")
-        self.queue.put(item)
-        print(f"  [Queue] + Добавлен элемент. Очередь: {self.queue.qsize()}")
-    
-    def get(self):
+        self.queue.put(item) #self.queue - обращение к внутренней очереди, put(item) - вызов метода put стандартной очереди
+        #элемент добавляется в очередь (блокирующая операция если очередь полна)
+        print(f"  [Queue] + Добавлен элемент. Очередь: {self.queue.qsize()}") 
+     
+    def get(self):  #определение метода get для извлечения элемента
         try:
-            item = self.queue.get(timeout=0.1)
+            item = self.queue.get(timeout=0.1) #метод извлечения из очереди, 
             print(f"  [Queue] - Извлечен элемент. Очередь: {self.queue.qsize()}")
             return item
         except queue.Empty:
@@ -76,7 +65,6 @@ class BlockingQueue:
 
 
 class Producer(threading.Thread):
-    """Создатель задач"""
     
     def __init__(self, task_queue, images_folder, output_folder, 
                  process_type, num_images):
@@ -95,7 +83,7 @@ class Producer(threading.Thread):
     def run(self):
         print("\n[PRODUCER] НАЧАЛО РАБОТЫ")
         
-        # Получаем список изображений
+        #получаем список изображений
         try:
             all_images = [f for f in os.listdir(self.images_folder) 
                          if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
@@ -109,12 +97,12 @@ class Producer(threading.Thread):
         
         print(f"[PRODUCER] Найдено изображений: {len(all_images)}")
         
-        # Создаем задачи
+        #создаем задачи
         for i in range(self.num_images):
             if not self.running:
                 break
             
-            # Выбираем случайное изображение
+            #выбираем случайное изображение
             image_file = random.choice(all_images)
             input_path = os.path.join(self.images_folder, image_file)
             
