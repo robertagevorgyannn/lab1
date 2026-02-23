@@ -64,21 +64,21 @@ class BlockingQueue: #класс для расширения стандартн�
         return self.queue.qsize() 
 
 
-class Producer(threading.Thread):
+class Producer(threading.Thread): #создается класс Producer, который наследуется от threading.Thread, значит, каждый объект Producer будет работать в отдельном потоке 
     
     def __init__(self, task_queue, images_folder, output_folder, 
                  process_type, num_images):
-        super().__init__()
-        self.task_queue = task_queue
-        self.images_folder = images_folder
-        self.output_folder = output_folder
-        self.process_type = process_type
-        self.num_images = num_images
-        self.running = True
-        self.tasks_created = 0
+        super().__init__() #вызов конструктора родительского класса 
+        self.task_queue = task_queue #запоминается ссылка на очередь задач в атрибуте объекта
+        self.images_folder = images_folder #сохранение папки с исходниками
+        self.output_folder = output_folder #сохранение папки для результатов 
+        self.process_type = process_type #сохранение типа обработки
+        self.num_images = num_images #количество изображений для обработки
+        self.running = True #флаг работы
+        self.tasks_created = 0 #счетчик созданных задач
         
-        os.makedirs(output_folder, exist_ok=True)
-        print("[PRODUCER] Создан")
+        os.makedirs(output_folder, exist_ok=True) #создание всех папок по пути если их нет, exist_ok=True - не выдаёт ошибку, если папка уже существует
+        print("[PRODUCER] Создан") #отладочный вывод - сообщает о создании производителя
     
     def run(self):
         print("\n[PRODUCER] НАЧАЛО РАБОТЫ")
