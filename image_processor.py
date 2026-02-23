@@ -166,32 +166,31 @@ class Consumer(threading.Thread):  #создает класс Consumer, кажд
             process_time = time.time() - start_time # вычисление времени обработки
             
             #создаем результат
-            result = TaskResult(
+            result = TaskResult(  
                 task_id=task.task_id,
                 success=success,
                 message=message,
                 process_time=process_time,
-                consumer_id=self.consumer_id
+                consumer_id=self.consumer_id #id потребителя, который обработал задачу
             )
             
-            # Отправляем результат
-            self.result_queue.put(result)
-            self.task_queue.task_done()
+            #отправляем результат
+            self.result_queue.put(result) #кладет объект результата в очередь результатов
+            self.task_queue.task_done() #сообщает что обработка текущей задачи завершена
             self.processed_count += 1
             
-            status = "✓" if success else "✗"
+            status = "ok" if success else "no"
             print(f"[Consumer-{self.consumer_id}] Задача #{task.task_id} {status} за {process_time:.2f}с")
         
         print(f"[Consumer-{self.consumer_id}] ЗАВЕРШЕНИЕ: обработано {self.processed_count}")
     
     def process_image(self, task):
-        """Обработка изображения"""
         try:
-            # Открываем изображение
+            #открываем изображение
             with Image.open(task.input_path) as img:
-                # Применяем эффект
+                #применяем эффект
                 if task.process_type == ProcessingType.INVERT:
-                    # Инверсия (негатив)
+                    #инверсия
                     if img.mode == 'RGB':
                         processed = Image.eval(img, lambda x: 255 - x)
                     else:
@@ -199,17 +198,17 @@ class Consumer(threading.Thread):  #создает класс Consumer, кажд
                         processed = Image.eval(img_rgb, lambda x: 255 - x)
                 
                 elif task.process_type == ProcessingType.BLUR:
-                    # Размытие
+                    #размытие
                     processed = img.filter(ImageFilter.GaussianBlur(radius=2))
                 
                 elif task.process_type == ProcessingType.MIRROR:
-                    # Отражение
+                    #отражение
                     processed = img.transpose(Image.FLIP_LEFT_RIGHT)
                 
                 else:
                     return False, f"Неизвестный тип: {task.process_type}"
                 
-                # Сохраняем
+                #сохраняем
                 processed.save(task.output_path)
             
             return True, f"Сохранено: {task.output_path}"
@@ -222,7 +221,6 @@ class Consumer(threading.Thread):  #создает класс Consumer, кажд
 
 
 class ResultCollector:
-    """Сборщик результатов"""
     
     def __init__(self, result_queue, num_expected):
         self.result_queue = result_queue
@@ -231,7 +229,6 @@ class ResultCollector:
         self.running = True
     
     def collect(self):
-        """Сбор результатов"""
         print("\n[COLLECTOR] Начинаю сбор результатов")
         
         while len(self.results) < self.num_expected:
@@ -243,7 +240,6 @@ class ResultCollector:
         print("[COLLECTOR] Сбор завершен")
     
     def print_stats(self):
-        """Вывод статистики"""
         print("\n" + "="*60)
         print("СТАТИСТИКА ОБРАБОТКИ")
         print("="*60)
@@ -271,20 +267,19 @@ class ResultCollector:
 
 
 def main():
-    """Главная функция"""
     
     print("="*60)
     print("ПАРАЛЛЕЛЬНАЯ ОБРАБОТКА ИЗОБРАЖЕНИЙ")
     print("Шаблон Producer-Consumer")
     print("="*60)
     
-    # НАСТРОЙКИ
+    #настройки
     INPUT_FOLDER = "input_images"
     OUTPUT_FOLDER = "output_images"
     NUM_TASKS = 10           # Количество задач
     NUM_CONSUMERS = 3        # Количество потребителей
     
-    # Выбираем тип обработки
+    #выбираем тип обработки
     print("\nВыберите тип обработки:")
     print("1 - Инверсия (негатив)")
     print("2 - Размытие")
@@ -305,55 +300,55 @@ def main():
         print("Неверный выбор. Использую ИНВЕРСИЮ")
         process_type = ProcessingType.INVERT
     
-    # Создаем очереди
-    task_queue = BlockingQueue(maxsize=5)     # Очередь задач
-    result_queue = BlockingQueue(maxsize=20)  # Очередь результатов
+    #создаем очереди
+    task_queue = BlockingQueue(maxsize=5)     #очередь задач
+    result_queue = BlockingQueue(maxsize=20)  #очередь результатов
     
-    # Создаем producer
+    #создаем producer
     producer = Producer(task_queue, INPUT_FOLDER, OUTPUT_FOLDER, 
                        process_type, NUM_TASKS)
     
-    # Создаем consumers
+    #создаем consumers
     consumers = []
     for i in range(NUM_CONSUMERS):
         consumer = Consumer(i + 1, task_queue, result_queue)
         consumers.append(consumer)
     
-    # Создаем collector
+    #создаем collector
     collector = ResultCollector(result_queue, NUM_TASKS)
     
-    # ЗАПУСК
+    #запуск
     print("\n" + "="*60)
     print("ЗАПУСК ПОТОКОВ")
     print("="*60)
     
-    # Запускаем producer
+    #запускаем producer
     producer.start()
     
-    # Запускаем consumers
+    #запускаем consumers
     for consumer in consumers:
         consumer.start()
     
-    # Ждем завершения producer
+    #ждем завершения producer
     producer.join()
     print("\n[MAIN] Producer завершил работу")
     
-    # Ждем пока очередь задач опустеет
+    #ждем пока очередь задач опустеет
     time.sleep(2)
     
-    # Останавливаем consumers
+    #останавливаем consumers
     print("\n[MAIN] Останавливаем consumers...")
     for consumer in consumers:
         consumer.stop()
     
-    # Ждем завершения consumers
+    #ждем завершения consumers
     for consumer in consumers:
         consumer.join()
     
-    # Собираем результаты
+    #собираем результаты
     collector.collect()
     
-    # Выводим статистику
+    #выводим статистику
     collector.print_stats()
     
     print("\n" + "="*60)
