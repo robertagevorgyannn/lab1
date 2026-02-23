@@ -138,12 +138,12 @@ class Producer(threading.Thread): #создается класс Producer, ко�
         self.running = False
 
 
-class Consumer(threading.Thread):    
+class Consumer(threading.Thread):  #создает класс Consumer, каждый будет работать в отдельном потоке и обрабатывать изображения
     def __init__(self, consumer_id, task_queue, result_queue):
         super().__init__()
         self.consumer_id = consumer_id
-        self.task_queue = task_queue
-        self.result_queue = result_queue
+        self.task_queue = task_queue #очередь задач - откуда брать изображения на обработку
+        self.result_queue = result_queue #очередь результатов 
         self.running = True
         self.processed_count = 0
         print(f"[Consumer-{consumer_id}] Создан")
@@ -152,19 +152,20 @@ class Consumer(threading.Thread):
         print(f"\n[Consumer-{self.consumer_id}] НАЧАЛО РАБОТЫ")
         
         while self.running:
-            # Получаем задачу
+            #получаем задачу
             task = self.task_queue.get()
             
             if task is None:
                 continue
             
-            # Обрабатываем
-            print(f"[Consumer-{self.consumer_id}] Обработка задачи #{task.task_id}")
-            start_time = time.time()
-            success, message = self.process_image(task)
-            process_time = time.time() - start_time
+            #обрабатываем
+            print(f"[Consumer-{self.consumer_id}] Обработка задачи #{task.task_id}") 
+            #логирование - сообщает, какой потребитель начал обрабатывать какую задачу 
+            start_time = time.time() #засекаем время начала 
+            success, message = self.process_image(task) #вызывается метод process_image - передает задачу - получает 2 значения
+            process_time = time.time() - start_time # вычисление времени обработки
             
-            # Создаем результат
+            #создаем результат
             result = TaskResult(
                 task_id=task.task_id,
                 success=success,
