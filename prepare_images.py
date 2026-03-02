@@ -57,7 +57,6 @@ def create_test_images():
         #сохраняем изображение
         filename = f"input_images/test_{i}.png" #формирование имени файла 
         #f-строка (formatted string) - подставляет значение i
-        #Пример: при i=1 получится "input_images/test_1.png"
         img.save(filename) #сохранение изображения в файл
         print(f"  Создано: {filename}")
     
